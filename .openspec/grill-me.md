@@ -8,4 +8,4 @@ When the user provides a feature request or idea:
    - 核心边界与限制条件
    - 数据持久化与状态管理方案
    - 异常处理与边界 UI 行为
-3. 等待用户回答后，将所有共识整理为一份完整的 Markdown Spec，保存并覆盖至 `.openspec/active.md`。
+3. 等待用户回答后，先检查 `.openspec/active.md` 的现有内容，再将共识整理并更新到 Spec 中，保留仍然有效的要求；存在冲突时向用户说明并根据其明确指示处理。

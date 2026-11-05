@@ -1,0 +1,11 @@
+{
+  "spec_ref": ".openspec/active.md",
+  "tasks": [
+    {
+      "id": "TASK-1",
+      "title": "<原子任务及交付物>",
+      "acceptance_criteria": "<可验证的验收条件、验证方式及必要依赖>",
+      "status": "pending"
+    }
+  ]
+}

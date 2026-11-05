@@ -15,7 +15,7 @@
     2. 严禁修改 `.openspec/active.md` 规约文件。
     3. 自动读取 `docs/pstack/stack.json` 中标记为 `pending` 的 Task。
     4. 强制在隔离工作区（Git Worktree）中进入【编写代码 -> 运行/编写端到端测试 -> 异常自愈 -> 标记 task 为 done】闭环。
-    5. 任务完成后输出极简的 Exit Code 与变动摘要，立即退出进程。
+    5. 任务完成后报告验证结果与变动摘要；交互式 Worker 可以保持会话，等待主控的审计反馈。
 
 - **ELSE** (未传入任务参数/正常启动)：
   - **当前身份**：Steering Agent（最高架构师/主控）。
@@ -38,7 +38,7 @@
    - 主控 Agent 将规约拆解为可独立验证的原子任务链，更新至 `docs/pstack/stack.json`。
 3. **隔离派发 (Isolated Execution)**：
    - 主控 Agent 调用底层 Harness 工具（Herdr / Pi / DeepSeek），自动为 Worker 创建临时 Git Worktree 物理隔离目录。
-   - 带参唤起 Worker 进程：`<harness-cli> --role worker --task-file docs/pstack/stack.json`。
+   - 通过当前环境支持的方式指定 Worker 身份和任务文件，不假定各 Harness 的启动参数相同。
 4. **门禁审计与合并 (Gate Audit & Sign-off)**：
    - Worker 跑通 E2E 测试并回传执行证据（测试日志/截图/Diff）。
    - 主控 Agent 校验修改范围无误后，向人类架构师汇报，完成主分支合并。
@@ -61,7 +61,7 @@
 主控 Agent 在调用后台 Worker 时，需根据环境配置 (`docs/system.config.json`) 或当前可用 CLI 自动选择适配器命令：
 
 - **Herdr 适配器**：
-  `herdr session create --role worker --task-file docs/pstack/stack.json`
+  使用 Herdr Skill，按已安装版本的帮助确认 worktree、Worker 启动与派发方式；不假定固定命令或参数可用。
 - **Pi Agent 适配器**：
   `pi --role worker --task-file docs/pstack/stack.json`
 - **DeepSeek / Universal Harness 适配器**：
