@@ -5,6 +5,7 @@ const {
   buildRequestPath,
   fetchTrending,
   fetchTrendingSafe,
+  filterByLanguage,
   friendlyErrorMessage,
 } = require('../src/services/github-fetcher');
 
@@ -64,6 +65,32 @@ test('fetchTrending normalizes a successful API response', async () => {
     updatedAt: '2026-11-05T10:00:00Z',
     fetchedAt: '2026-11-05T12:00:00.000Z',
   });
+});
+
+test('fetchTrending applies an exact local language filter after the API response', async () => {
+  const items = await fetchTrending({ language: 'javascript', limit: 10 }, {
+    now: NOW,
+    request: async () => ({
+      items: [
+        { full_name: 'octo/js', name: 'js', language: 'JavaScript' },
+        { full_name: 'octo/ts', name: 'ts', language: 'TypeScript' },
+        { full_name: 'octo/none', name: 'none', language: null },
+      ],
+    }),
+  });
+
+  assert.deepEqual(items.map((item) => item.fullName), ['octo/js']);
+});
+
+test('filterByLanguage is case-insensitive but does not perform fuzzy matching', () => {
+  const items = [
+    { language: 'C++', fullName: 'octo/cpp' },
+    { language: 'C#', fullName: 'octo/csharp' },
+    { language: 'JavaScript', fullName: 'octo/js' },
+  ];
+
+  assert.deepEqual(filterByLanguage(items, 'c++'), [items[0]]);
+  assert.deepEqual(filterByLanguage(items, 'script'), []);
 });
 
 test('fetchTrendingSafe turns a 404 into a friendly result without throwing', async () => {

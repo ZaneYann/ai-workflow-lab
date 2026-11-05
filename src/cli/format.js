@@ -47,6 +47,10 @@ function formatJson(items) {
 }
 
 function formatTable(items = [], { color } = {}) {
+  if (items.length === 0) {
+    return '[]';
+  }
+
   const colors = new chalk.Instance({ level: shouldUseColor(color) ? 1 : 0 });
   const table = new Table({
     head: TABLE_HEADERS.map((header) => colors.bold(header)),

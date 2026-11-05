@@ -12,11 +12,28 @@ const DEFAULT_OPTIONS = Object.freeze({
 });
 
 function parseLimit(value) {
-  const limit = Number.parseInt(value, 10);
-  if (!Number.isInteger(limit) || limit < 1) {
+  const limit = Number(value);
+  if (!/^\d+$/.test(String(value)) || !Number.isInteger(limit) || limit < 1) {
     throw new InvalidArgumentError('limit must be a positive integer');
   }
   return limit;
+}
+
+function parseChoice(name, allowedValues) {
+  return (value) => {
+    if (!allowedValues.includes(value)) {
+      throw new InvalidArgumentError(`${name} must be one of: ${allowedValues.join(', ')}`);
+    }
+    return value;
+  };
+}
+
+function parseLanguage(value) {
+  const language = String(value).trim();
+  if (!language) {
+    throw new InvalidArgumentError('language must not be empty');
+  }
+  return language;
 }
 
 function createProgram() {
@@ -25,12 +42,12 @@ function createProgram() {
     .description('Query GitHub trending repositories as JSON or a terminal table.')
     .configureOutput({ writeErr: () => {} })
     .version('0.1.0')
-    .option('--period <period>', 'trend period: daily, weekly, or monthly', DEFAULT_OPTIONS.period)
-    .option('--language <language>', 'filter by the primary programming language')
+    .option('--period <period>', 'trend period: daily, weekly, or monthly', parseChoice('period', ['daily', 'weekly', 'monthly']), DEFAULT_OPTIONS.period)
+    .option('--language <language>', 'filter by the primary programming language', parseLanguage)
     .option('--keyword <keyword>', 'filter by repository name or description')
     .option('--limit <number>', 'maximum number of repositories to return', parseLimit, DEFAULT_OPTIONS.limit)
-    .option('--sort <field>', 'sort by stars or daily growth', DEFAULT_OPTIONS.sort)
-    .option('--format <format>', 'output format: json or table', DEFAULT_OPTIONS.format)
+    .option('--sort <field>', 'sort by stars or daily growth', parseChoice('sort', ['stars', 'growth', 'updated']), DEFAULT_OPTIONS.sort)
+    .option('--format <format>', 'output format: json or table', parseChoice('format', ['json', 'table']), DEFAULT_OPTIONS.format)
     .option('--date <date>', 'trend date in YYYY-MM-DD format')
     .option('--token <token>', 'GitHub token (prefer GITHUB_TOKEN for scripts)');
 }
@@ -52,4 +69,6 @@ module.exports = {
   createProgram,
   parseArgs,
   parseLimit,
+  parseLanguage,
+  parseChoice,
 };

@@ -46,3 +46,7 @@ test('formatTable uses a consistent placeholder for missing values', () => {
 test('formatOutput rejects unsupported formats', () => {
   assert.throws(() => formatOutput([], { format: 'xml' }), /format must be json or table/);
 });
+
+test('formatTable does not render an empty table', () => {
+  assert.equal(formatTable([], { color: false }), '[]');
+});

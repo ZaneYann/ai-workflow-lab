@@ -142,6 +142,17 @@ function normalizeRepository(repository, trendDate = new Date(), fetchedAt = tre
   };
 }
 
+function filterByLanguage(items, language) {
+  if (!language) {
+    return items;
+  }
+
+  const expectedLanguage = String(language).trim().toLocaleLowerCase();
+  return items.filter((item) => (
+    String(item.language || '').trim().toLocaleLowerCase() === expectedLanguage
+  ));
+}
+
 function friendlyErrorMessage(error) {
   if (error instanceof GithubApiError && error.code === 'INVALID_DATE') {
     return error.message;
@@ -172,9 +183,10 @@ async function fetchTrending(options = {}, { request = requestGithub, now = new 
   const path = buildRequestPath(options);
   const payload = await request(path, { token: options.token });
   const items = Array.isArray(payload?.items) ? payload.items : [];
-  return items
+  const normalizedItems = items
     .slice(0, options.limit || 10)
     .map((repository) => normalizeRepository(repository, now, now));
+  return filterByLanguage(normalizedItems, options.language);
 }
 
 async function fetchTrendingSafe(options = {}, dependencies = {}) {
@@ -193,6 +205,7 @@ module.exports = {
   buildSearchQuery,
   fetchTrending,
   fetchTrendingSafe,
+  filterByLanguage,
   friendlyErrorMessage,
   getPeriodStartDate,
   normalizeRepository,

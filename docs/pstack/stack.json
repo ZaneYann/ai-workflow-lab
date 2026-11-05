@@ -18,6 +18,12 @@
       "title": "实现终端表格格式化输出逻辑 (cli-table3/chalk)",
       "acceptance_criteria": "将数据以干净美观的表格形式打印至 Terminal，格式符合 Spec 规定",
       "status": "done"
+    },
+    {
+      "id": "TASK-4",
+      "title": "增强输入校验与异常返回处理",
+      "acceptance_criteria": "当输入无效/不存在的语言时，在 GitHub API 返回后进行本地语言精确过滤；过滤为空时，在终端友好提示“未找到相关语言的趋势数据”，程序不输出空表格。",
+      "status": "done"
     }
   ]
 }

@@ -73,3 +73,39 @@ test('main reports fetch errors on stderr and leaves stdout clean', async () => 
   assert.equal(stdout.value, '');
   assert.match(stderr.value, /timed out/);
 });
+
+test('main gives the language-specific no-data hint and never prints an empty table', async () => {
+  const stdout = captureStream();
+  const stderr = captureStream();
+  const exitCode = await main(['--language', 'does-not-exist', '--format', 'table'], {
+    request: async () => ({ items: [] }),
+    stdout,
+    stderr,
+  });
+
+  assert.equal(exitCode, 0);
+  assert.equal(stdout.value, '[]\n');
+  assert.equal(stderr.value, '未找到相关语言的趋势数据\n');
+  assert.equal(stdout.value.includes('┌'), false);
+});
+
+test('main reports no language data after local filtering of an API response', async () => {
+  const stdout = captureStream();
+  const stderr = captureStream();
+  const exitCode = await main(['--language', 'Ruby'], {
+    request: async () => ({
+      items: [{
+        full_name: 'octo/js',
+        language: 'JavaScript',
+        stargazers_count: 1,
+        forks_count: 0,
+      }],
+    }),
+    stdout,
+    stderr,
+  });
+
+  assert.equal(exitCode, 0);
+  assert.equal(stdout.value, '[]\n');
+  assert.equal(stderr.value, '未找到相关语言的趋势数据\n');
+});
