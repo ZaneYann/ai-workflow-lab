@@ -8,7 +8,9 @@
   },
   "scripts": {
     "test": "node --test --experimental-test-isolation=none",
-    "start": "node src/cli.js"
+    "start": "node src/cli.js",
+    "web": "node src/web/server.js",
+    "test:browser": "node test-support/browser-e2e.cjs"
   },
   "dependencies": {
     "chalk": "^4.1.2",
