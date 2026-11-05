@@ -1,0 +1,23 @@
+{
+  "spec_ref": ".openspec/active.md",
+  "tasks": [
+    {
+      "id": "TASK-1",
+      "title": "搭建基础项目结构与 CLI 参数解析 (Commander/yargs)",
+      "acceptance_criteria": "解析 --period 和 language 参数，无参数时输出默认值，单元测试通过",
+      "status": "pending"
+    },
+    {
+      "id": "TASK-2",
+      "title": "实现 GitHub Trending 数据 Fetcher 服务及异常处理",
+      "acceptance_criteria": "能成功获取 API 数据，遇到网络超时或 404 时优雅友好提示不崩溃，单元测试通过",
+      "status": "pending"
+    },
+    {
+      "id": "TASK-3",
+      "title": "实现终端表格格式化输出逻辑 (cli-table3/chalk)",
+      "acceptance_criteria": "将数据以干净美观的表格形式打印至 Terminal，格式符合 Spec 规定",
+      "status": "pending"
+    }
+  ]
+}
