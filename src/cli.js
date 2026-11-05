@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 const { parseArgs } = require('./cli/args');
-const { formatOutput } = require('./cli/format');
+const { writeFile } = require('node:fs/promises');
+const { formatJson, formatOutput } = require('./cli/format');
 const { fetchTrendingSafe } = require('./services/github-fetcher');
 
 const NO_LANGUAGE_DATA_MESSAGE = '未找到相关语言的趋势数据';
@@ -22,6 +23,25 @@ async function main(argv = process.argv.slice(2), { request, stdout = process.st
   if (result.error) {
     stderr.write(`${result.error}\n`);
     return 1;
+  }
+
+  if (options.output) {
+    try {
+      await writeFile(options.output, `${formatJson(result.items)}\n`, {
+        encoding: 'utf8',
+        flag: options.force ? 'w' : 'wx',
+      });
+    } catch (error) {
+      const reasons = {
+        EEXIST: 'target already exists (use --force to overwrite)',
+        ENOENT: 'parent directory does not exist',
+        EACCES: 'permission denied',
+        EPERM: 'permission denied',
+        EISDIR: 'target is a directory',
+      };
+      stderr.write(`Unable to export JSON: ${reasons[error.code] || 'file write failed'}.\n`);
+      return 1;
+    }
   }
 
   if (result.items.length === 0) {
