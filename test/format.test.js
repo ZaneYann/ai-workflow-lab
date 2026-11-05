@@ -23,8 +23,8 @@ test('formatTable renders a readable table without ANSI codes when color is disa
 
   assert.match(output, /Repository/);
   assert.match(output, /octo\/demo/);
-  assert.match(output, /1,234/);
-  assert.match(output, /\+78/);
+  assert.match(output, /1234/);
+  assert.match(output, /78/);
   assert.equal(/\u001b\[/.test(output), false);
 });
 

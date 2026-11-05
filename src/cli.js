@@ -2,7 +2,7 @@
 
 const { parseArgs } = require('./cli/args');
 const { writeFile } = require('node:fs/promises');
-const { formatJson, formatOutput } = require('./cli/format');
+const { formatOutput } = require('./cli/format');
 const { fetchTrendingSafe } = require('./services/github-fetcher');
 
 const NO_LANGUAGE_DATA_MESSAGE = '未找到相关语言的趋势数据';
@@ -25,9 +25,11 @@ async function main(argv = process.argv.slice(2), { request, stdout = process.st
     return 1;
   }
 
+  const content = `${formatOutput(result.items, { format: options.format, color: options.output ? false : undefined })}\n`;
+
   if (options.output) {
     try {
-      await writeFile(options.output, `${formatJson(result.items)}\n`, {
+      await writeFile(options.output, content, {
         encoding: 'utf8',
         flag: options.force ? 'w' : 'wx',
       });
@@ -39,7 +41,7 @@ async function main(argv = process.argv.slice(2), { request, stdout = process.st
         EPERM: 'permission denied',
         EISDIR: 'target is a directory',
       };
-      stderr.write(`Unable to export JSON: ${reasons[error.code] || 'file write failed'}.\n`);
+      stderr.write(`Unable to export results: ${reasons[error.code] || 'file write failed'}.\n`);
       return 1;
     }
   }
@@ -48,11 +50,9 @@ async function main(argv = process.argv.slice(2), { request, stdout = process.st
     if (options.language) {
       stderr.write(`${NO_LANGUAGE_DATA_MESSAGE}\n`);
     }
-    stdout.write('[]\n');
-    return 0;
   }
 
-  stdout.write(`${formatOutput(result.items, { format: options.format })}\n`);
+  stdout.write(content);
   return 0;
 }
 

@@ -2,14 +2,13 @@ const Table = require('cli-table3');
 const chalk = require('chalk');
 
 const TABLE_HEADERS = [
-  'Rank',
-  'Repository',
-  'Description',
-  'Language',
-  'Stars',
-  'Forks',
-  'Daily Growth',
-  'Updated At',
+  'trendDate', 'fullName (Repository)', 'name', 'description', 'url',
+  'language', 'stars', 'forks', 'dailyGrowth', 'updatedAt', 'fetchedAt',
+];
+
+const TABLE_FIELDS = [
+  'trendDate', 'fullName', 'name', 'description', 'url',
+  'language', 'stars', 'forks', 'dailyGrowth', 'updatedAt', 'fetchedAt',
 ];
 
 function displayValue(value) {
@@ -46,6 +45,14 @@ function formatJson(items) {
   return JSON.stringify(items, null, 2);
 }
 
+// Escape control characters so each repository stays on one physical line and
+// data cannot inject terminal control sequences. Preserve all other characters.
+function tableValue(value) {
+  return JSON.stringify(displayValue(value)).slice(1, -1)
+    .replace(/[\u007f-\u009f\u2028\u2029\u2500-\u257f]/g, (char) =>
+      `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}`);
+}
+
 function formatTable(items = [], { color } = {}) {
   if (items.length === 0) {
     return '[]';
@@ -58,23 +65,10 @@ function formatTable(items = [], { color } = {}) {
       head: [],
       border: [],
     },
-    colWidths: [6, 28, 42, 16, 12, 12, 16, 22],
-    wordWrap: true,
   });
 
-  items.forEach((item, index) => {
-    table.push([
-      String(index + 1),
-      displayValue(item.fullName || item.name),
-      truncate(item.description, 40),
-      displayValue(item.language),
-      formatNumber(item.stars),
-      formatNumber(item.forks),
-      item.dailyGrowth === null || item.dailyGrowth === undefined
-        ? '-'
-        : `+${formatNumber(item.dailyGrowth)}`,
-      displayValue(item.updatedAt),
-    ]);
+  items.forEach((item) => {
+    table.push(TABLE_FIELDS.map((field) => tableValue(item[field])));
   });
 
   return table.toString();

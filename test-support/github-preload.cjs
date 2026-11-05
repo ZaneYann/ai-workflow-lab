@@ -19,6 +19,9 @@ https.request = (options, callback) => {
       { full_name: 'octo/second', language: 'Python', stargazers_count: 4 },
       { full_name: 'octo/third', language: 'JavaScript', stargazers_count: 2 },
     ];
+    if (process.env.EXPORT_TEST_SCENARIO === 'special') {
+      items = [{ full_name: 'octo/special', name: 'special', description: 'A long description '.repeat(5) + 'line\nnext\tcell\u001b[31m', html_url: 'https://github.com/octo/special', language: 'JavaScript', stargazers_count: 1234, forks_count: 45, stars_today: 6, updated_at: '2026-11-05T10:00:00Z' }];
+    }
     const params = new URL(`https://api.github.com${options.path}`).searchParams;
     if (params.get('sort') === 'updated') {
       if (!params.get('q').includes('language:JavaScript') || !params.get('q').includes('demo') || !['2', '4'].includes(params.get('per_page'))) {
