@@ -47,8 +47,8 @@ function createProgram() {
     .option('--keyword <keyword>', 'filter by repository name or description')
     .option('--limit <number>', 'maximum number of repositories to return', parseLimit, DEFAULT_OPTIONS.limit)
     .option('--sort <field>', 'sort by stars or daily growth', parseChoice('sort', ['stars', 'growth', 'updated']), DEFAULT_OPTIONS.sort)
-    .option('--format <format>', 'output format: json or table', parseChoice('format', ['json', 'table']), DEFAULT_OPTIONS.format)
-    .option('--output <path>', 'export results as JSON to a file')
+    .option('--format <format>', 'output format: json or table (all fields; missing values shown as -)', parseChoice('format', ['json', 'table']), DEFAULT_OPTIONS.format)
+    .option('--output <path>', 'export the selected output format to a file')
     .option('--force', 'overwrite an existing export file')
     .option('--date <date>', 'trend date in YYYY-MM-DD format')
     .option('--token <token>', 'GitHub token (prefer GITHUB_TOKEN for scripts)');

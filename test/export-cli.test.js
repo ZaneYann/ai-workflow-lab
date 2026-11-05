@@ -9,7 +9,7 @@ const cli = path.resolve(__dirname, '../src/cli.js');
 const preload = path.resolve(__dirname, '../test-support/github-preload.cjs');
 function run(cwd, args = [], scenario = 'normal') {
   return spawnSync(process.execPath, ['--require', preload, cli, ...args], {
-    cwd, encoding: 'utf8', env: { ...process.env, EXPORT_TEST_SCENARIO: scenario, GITHUB_TOKEN: 'secret-token' },
+    cwd, encoding: 'utf8', env: { ...process.env, FORCE_COLOR: '3', EXPORT_TEST_SCENARIO: scenario, GITHUB_TOKEN: 'secret-token' },
   });
 }
 function temp(t) {
@@ -41,15 +41,34 @@ test('CLI exports empty results and preserves table and no-export behavior', (t)
   assert.equal(empty.status, 0, empty.stderr);
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir, 'empty.json'), 'utf8')), []);
   assert.deepEqual(JSON.parse(empty.stdout), []);
-  const table = run(dir, ['--format', 'table', '--output', 'table.json']);
+  const emptyTable = run(dir, ['--format', 'table', '--output', 'empty-table.txt'], 'empty');
+  assert.equal(emptyTable.status, 0, emptyTable.stderr);
+  assert.equal(emptyTable.stdout, '[]\n');
+  assert.equal(fs.readFileSync(path.join(dir, 'empty-table.txt'), 'utf8'), emptyTable.stdout);
+  const table = run(dir, ['--format', 'table', '--output', 'table.txt']);
   assert.equal(table.status, 0, table.stderr);
   assert.match(table.stdout, /Repository/);
-  assert.equal(JSON.parse(fs.readFileSync(path.join(dir, 'table.json'), 'utf8'))[0].fullName, 'octo/first');
+  assert.equal(fs.readFileSync(path.join(dir, 'table.txt'), 'utf8'), table.stdout);
   const before = fs.readdirSync(dir);
   const normal = run(dir);
   assert.equal(normal.status, 0, normal.stderr);
   assert.equal(JSON.parse(normal.stdout)[0].fullName, 'octo/first');
   assert.deepEqual(fs.readdirSync(dir), before);
+});
+
+test('CLI table lists all fields in one row with untruncated escaped values and exports identical text', (t) => {
+  const dir = temp(t);
+  const result = run(dir, ['--format', 'table', '--output', 'special.txt'], 'special');
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(fs.readFileSync(path.join(dir, 'special.txt'), 'utf8'), result.stdout);
+  for (const field of ['trendDate', 'fullName', 'name', 'description', 'url', 'language', 'stars', 'forks', 'dailyGrowth', 'updatedAt', 'fetchedAt']) {
+    assert.ok(result.stdout.includes(field), field);
+  }
+  assert.ok(result.stdout.includes('A long description '.repeat(5) + 'line\\nnext\\tcell\\u001b[31m'));
+  const rows = result.stdout.split('\n').filter(line => line.includes('octo/special'));
+  assert.equal(rows.length, 1);
+  assert.match(rows[0], /https:\/\/github\.com\/octo\/special/);
+  assert.doesNotMatch(result.stdout, /\u001b/);
 });
 
 test('CLI protects existing files unless force is specified', (t) => {
