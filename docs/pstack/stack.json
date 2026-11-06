@@ -66,6 +66,24 @@
       "title": "实现 Web 最低 Star 数筛选（依赖 TASK-10）",
       "acceptance_criteria": "依赖 TASK-10；页面和服务接受、校验并传递可选最低 Star 数，可清除条件；验证边界、无效输入、筛选后空结果和导出，通过端到端或浏览器测试并运行现有测试。",
       "status": "done"
+    },
+    {
+      "id": "TASK-12",
+      "title": "基于 UI/UX Pro Max 优化单页视觉系统与交互状态（依赖 TASK-11）",
+      "acceptance_criteria": "依赖 TASK-11；仅修改现有前端 HTML/CSS/JS 及必要测试，建立统一的开发者工具视觉系统、信息层级、表单/按钮/卡片/输出区域状态、键盘焦点和 reduced-motion 行为；不改变查询参数、API、导出语义，不新增运行时依赖；提供实际浏览器截图或等价可审计证据。",
+      "status": "pending"
+    },
+    {
+      "id": "TASK-13",
+      "title": "验证前端四档响应式与可访问性行为（依赖 TASK-12）",
+      "acceptance_criteria": "依赖 TASK-12；使用实际浏览器验证 375、768、1024、1440 宽度，无横向滚动，触控目标至少 44px，正文至少 16px，焦点可见，语义标签/错误提示/reduced-motion 行为可用；覆盖正常查询、空结果、输入错误、服务错误、格式切换和主动下载，并保留测试证据。",
+      "status": "pending"
+    },
+    {
+      "id": "TASK-14",
+      "title": "前端优化回归审计与交付证据（依赖 TASK-12、TASK-13）",
+      "acceptance_criteria": "依赖 TASK-12 和 TASK-13；运行 npm test 与 npm run test:browser 均通过，审计 git diff 仅包含本次前端优化范围和必要测试/文档变更；记录视觉、响应式、可访问性和回归测试证据，未验证项不得标记完成。",
+      "status": "pending"
     }
   ]
 }
