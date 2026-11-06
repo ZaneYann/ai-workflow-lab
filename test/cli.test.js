@@ -109,3 +109,23 @@ test('main reports no language data after local filtering of an API response', a
   assert.equal(stdout.value, '[]\n');
   assert.equal(stderr.value, '未找到相关语言的趋势数据\n');
 });
+
+
+test('minimum stars flows through CLI and validates input', async () => {
+  for (const value of [undefined, '0', '100']) {
+    let path; const stdout = captureStream();
+    const args = ['--language', 'JavaScript', '--keyword', 'demo', '--sort', 'updated', '--limit', '2'];
+    if (value !== undefined) args.push('--min-stars', value);
+    assert.equal(await main(args, { stdout, stderr: captureStream(), request: async p => { path = p; return RESPONSE; } }), 0);
+    const params = new URL('https://example.com' + path).searchParams;
+    assert.equal(params.get('q').includes('stars:>='), value !== undefined);
+    if (value !== undefined) assert.ok(params.get('q').includes(`stars:>=${value}`));
+    assert.equal(params.get('sort'), 'updated'); assert.equal(params.get('per_page'), '2');
+    assert.equal(JSON.parse(stdout.value)[0].fullName, 'octo/demo');
+  }
+  for (const value of ['-1', '1.5', 'abc']) {
+    let called = false;
+    await assert.rejects(main(['--min-stars', value], { stdout: captureStream(), stderr: captureStream(), request: async () => { called = true; } }));
+    assert.equal(called, false);
+  }
+});

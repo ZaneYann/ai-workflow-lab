@@ -115,3 +115,14 @@ test('CLI help documents export options', () => {
   assert.match(result.stdout, /--output/);
   assert.match(result.stdout, /--force/);
 });
+
+
+test('CLI minimum stars combines with export and empty results', t => {
+  const dir = temp(t);
+  const result = run(dir, ['--min-stars', '100', '--output', 'result.json']);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(fs.readFileSync(path.join(dir, 'result.json'), 'utf8'), result.stdout);
+  const empty = run(dir, ['--min-stars', '100', '--output', 'empty.json'], 'empty');
+  assert.equal(empty.status, 0, empty.stderr); assert.equal(empty.stdout, '[]\n');
+  assert.equal(fs.readFileSync(path.join(dir, 'empty.json'), 'utf8'), empty.stdout);
+});

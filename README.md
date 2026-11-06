@@ -14,3 +14,5 @@ npm run web
 运行测试：`npm test`。
 
 浏览器端到端测试：`npm run test:browser`。默认使用 Windows 上的 Chrome；其他安装位置可通过 `CHROME_PATH` 环境变量指定 Chrome 可执行文件。测试使用临时浏览器配置、模拟 GitHub 响应，并验证实际下载文件；不会访问 GitHub。
+
+最低 Star 数可通过 CLI 的 `--min-stars 100` 或网页的“最低 Stars”设置；留空则不限制，0 和阈值本身均包含在内。

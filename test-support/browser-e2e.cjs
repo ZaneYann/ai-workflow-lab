@@ -41,11 +41,13 @@ async function main() {
     await command('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: downloads });
     await until(() => evaluate("document.readyState === 'complete' && !!document.querySelector('#query-form')"), 'page ready');
     assert.equal((await fs.readdir(downloads)).length, 0);
-    await evaluate(`document.querySelector('[name=language]').value='JavaScript'; document.querySelector('[name=keyword]').value='demo'; document.querySelector('[name=period]').value='weekly'; document.querySelector('[name=limit]').value='2'; document.querySelector('[name=sort]').value='updated'; document.querySelector('[name=date]').value='2026-11-05'; document.querySelector('#submit').click()`);
+    for (const value of ['-1', '1.5']) { assert.equal(await evaluate(`(() => { const input = document.querySelector('[name=min-stars]'); input.value = '${value}'; return input.checkValidity(); })()`), false); }
+    await evaluate("document.querySelector('[name=min-stars]').value=''");
+    await evaluate(`document.querySelector('[name=min-stars]').value='100'; document.querySelector('[name=language]').value='JavaScript'; document.querySelector('[name=keyword]').value='demo'; document.querySelector('[name=period]').value='weekly'; document.querySelector('[name=limit]').value='2'; document.querySelector('[name=sort]').value='updated'; document.querySelector('[name=date]').value='2026-11-05'; document.querySelector('#submit').click()`);
     await until(() => evaluate("document.querySelector('#status').textContent.includes('查询完成')"), 'successful query');
     assert.match(await evaluate("document.querySelector('#cards').textContent"), /octo\/example/);
     const json = await evaluate("document.querySelector('#output').textContent"); assert.equal(JSON.parse(json)[0].stars, 123);
-    const params = new URL('https://api.github.com' + calls[0]).searchParams; assert.match(params.get('q'), /language:JavaScript/); assert.match(params.get('q'), /demo/); assert.match(params.get('q'), /2026-10-29/); assert.equal(params.get('sort'), 'updated'); assert.equal(params.get('per_page'), '2');
+    const params = new URL('https://api.github.com' + calls[0]).searchParams; assert.match(params.get('q'), /stars:>=100/); assert.match(params.get('q'), /language:JavaScript/); assert.match(params.get('q'), /demo/); assert.match(params.get('q'), /2026-10-29/); assert.equal(params.get('sort'), 'updated'); assert.equal(params.get('per_page'), '2');
     assert.equal((await fs.readdir(downloads)).length, 0, 'query must not download');
     await evaluate("document.querySelector('#download').click()");
     const jsonFile = path.join(downloads, 'github-repositories.json'); await until(async () => { try { return (await fs.readFile(jsonFile, 'utf8')) === json; } catch { return false; } }, 'JSON download');
@@ -53,10 +55,11 @@ async function main() {
     const table = await evaluate("document.querySelector('#output').textContent"); assert.match(table, /octo\/example/); assert.match(table, /dailyGrowth/); assert.doesNotMatch(table, /\x1b/);
     await evaluate("document.querySelector('#download').click()");
     const tableFile = path.join(downloads, 'github-repositories.txt'); await until(async () => { try { return (await fs.readFile(tableFile, 'utf8')) === table; } catch { return false; } }, 'table download');
-    await evaluate("document.querySelector('[name=keyword]').value='empty-test'; document.querySelector('#submit').click()");
+    await evaluate("document.querySelector('[name=min-stars]').value='0'; document.querySelector('[name=keyword]').value='empty-test'; document.querySelector('#submit').click()");
     await until(() => evaluate("document.querySelector('#status').textContent.includes('没有找到结果')"), 'empty state'); assert.equal(await evaluate("document.querySelector('#output').textContent"), '[]\n');
-    await evaluate("document.querySelector('[name=keyword]').value='error-test'; document.querySelector('#submit').click()");
-    await until(() => evaluate("document.querySelector('#status').textContent.includes('查询失败')"), 'error state'); assert.match(await evaluate("document.querySelector('#status').textContent"), /timed out/i); assert.equal(await evaluate("document.querySelector('#download').disabled"), true);
+    assert.match(new URL('https://api.github.com' + calls.at(-1)).searchParams.get('q'), /stars:>=0/);
+    await evaluate("document.querySelector('[name=min-stars]').value=''; document.querySelector('[name=keyword]').value='error-test'; document.querySelector('#submit').click()");
+    await until(() => evaluate("document.querySelector('#status').textContent.includes('查询失败')"), 'error state'); assert.doesNotMatch(new URL('https://api.github.com' + calls.at(-1)).searchParams.get('q'), /stars:>=/); assert.match(await evaluate("document.querySelector('#status').textContent"), /timed out/i); assert.equal(await evaluate("document.querySelector('#download').disabled"), true);
     assert.doesNotMatch(await evaluate('document.documentElement.outerHTML'), /browser-test-secret/);
     await evaluate("document.querySelector('[name=keyword]').value='demo'; document.querySelector('#submit').click()");
     await until(() => evaluate("document.querySelector('#status').textContent.includes('查询完成')"), 'retry');

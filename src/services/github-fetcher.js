@@ -56,6 +56,9 @@ function buildSearchQuery(options = {}) {
   if (options.language) {
     query.push(`language:${options.language}`);
   }
+  if (options.minStars !== undefined) {
+    query.push(`stars:>=${options.minStars}`);
+  }
   if (options.keyword) {
     query.push(options.keyword);
   }

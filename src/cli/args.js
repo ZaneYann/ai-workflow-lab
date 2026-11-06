@@ -19,6 +19,14 @@ function parseLimit(value) {
   return limit;
 }
 
+function parseMinStars(value) {
+  const number = Number(value);
+  if (!/^\d+$/.test(String(value)) || !Number.isSafeInteger(number)) {
+    throw new InvalidArgumentError('min-stars must be a non-negative integer');
+  }
+  return number;
+}
+
 function parseChoice(name, allowedValues) {
   return (value) => {
     if (!allowedValues.includes(value)) {
@@ -45,6 +53,7 @@ function createProgram() {
     .option('--period <period>', 'trend period: daily, weekly, or monthly', parseChoice('period', ['daily', 'weekly', 'monthly']), DEFAULT_OPTIONS.period)
     .option('--language <language>', 'filter by the primary programming language', parseLanguage)
     .option('--keyword <keyword>', 'filter by repository name or description')
+    .option('--min-stars <number>', 'minimum number of stars (inclusive)', parseMinStars)
     .option('--limit <number>', 'maximum number of repositories to return', parseLimit, DEFAULT_OPTIONS.limit)
     .option('--sort <field>', 'sort by stars or daily growth', parseChoice('sort', ['stars', 'growth', 'updated']), DEFAULT_OPTIONS.sort)
     .option('--format <format>', 'output format: json or table (all fields; missing values shown as -)', parseChoice('format', ['json', 'table']), DEFAULT_OPTIONS.format)

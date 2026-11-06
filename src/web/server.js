@@ -10,7 +10,7 @@ const assets = {
   '/app.js': ['app.js', 'text/javascript; charset=utf-8'],
   '/style.css': ['style.css', 'text/css; charset=utf-8'],
 };
-const allowed = new Set(['period', 'language', 'keyword', 'limit', 'sort', 'date']);
+const allowed = new Set(['period', 'language', 'keyword', 'min-stars', 'limit', 'sort', 'date']);
 
 function send(res, status, body, type = 'application/json; charset=utf-8') {
   res.writeHead(status, { 'Content-Type': type, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'self'; base-uri 'none'; frame-ancestors 'none'" });

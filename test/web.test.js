@@ -34,3 +34,19 @@ test('local service handles queries, formats, errors and token safely over HTTP'
   assert.ok(called >= 4);
   const badHostStatus = await new Promise((resolve, reject) => require('node:http').get(base + '/api/query', { headers: { Host: 'attacker.example' } }, res => { res.resume(); resolve(res.statusCode); }).on('error', reject)); assert.equal(badHostStatus, 403);
 });
+
+
+test('HTTP minimum stars accepts boundaries and clearing, rejects invalid values', async t => {
+  const paths = [];
+  const server = createServer({ request: async path => { paths.push(path); return { items: [] }; } });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const base = `http://127.0.0.1:${server.address().port}/api/query`;
+  for (const value of ['0', '100', undefined]) {
+    const response = await fetch(base + (value === undefined ? '' : `?min-stars=${value}`));
+    assert.equal(response.status, 200); assert.equal((await response.json()).json, '[]\n');
+    const q = new URL('https://example.com' + paths.at(-1)).searchParams.get('q');
+    if (value === undefined) assert.doesNotMatch(q, /stars:>=/); else assert.ok(q.includes(`stars:>=${value}`));
+  }
+  for (const value of ['-1', '1.5', 'abc']) assert.equal((await fetch(base + `?min-stars=${value}`)).status, 400);
+});
