@@ -46,6 +46,58 @@ async function main() {
     await evaluate(`document.querySelector('[name=min-stars]').value='100'; document.querySelector('[name=language]').value='JavaScript'; document.querySelector('[name=keyword]').value='demo'; document.querySelector('[name=period]').value='weekly'; document.querySelector('[name=limit]').value='2'; document.querySelector('[name=sort]').value='updated'; document.querySelector('[name=date]').value='2026-11-05'; document.querySelector('#submit').click()`);
     await until(() => evaluate("document.querySelector('#status').textContent.includes('查询完成')"), 'successful query');
     assert.match(await evaluate("document.querySelector('#cards').textContent"), /octo\/example/);
+    // Measure the rendered page at the four specified widths, including populated results.
+    const evidenceDir = path.resolve(__dirname, '../docs/pstack/frontend-visual-evidence');
+    await fs.mkdir(evidenceDir, { recursive: true });
+    await command('Page.enable');
+    for (const width of [375, 768, 1024, 1440]) {
+      await command('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: false });
+      const metrics = await evaluate(`(() => {
+        const controls = [...document.querySelectorAll('input, select, button, .card a')];
+        const text = [...document.querySelectorAll('p, label, input, select, button, pre, .meta, .field-hint')];
+        return {
+          viewport: window.innerWidth,
+          clientWidth: document.documentElement.clientWidth,
+          documentWidth: document.documentElement.scrollWidth,
+          smallTargets: controls.filter(el => { const r = el.getBoundingClientRect(); return r.width < 44 || r.height < 44; }).map(el => el.outerHTML),
+          smallText: text.filter(el => parseFloat(getComputedStyle(el).fontSize) < 16).map(el => el.outerHTML),
+          unlabeled: [...document.querySelectorAll('input, select')].filter(el => !el.labels || !el.labels.length).map(el => el.outerHTML)
+        };
+      })()`);
+      assert.equal(metrics.viewport, width);
+      assert.ok(metrics.documentWidth <= metrics.clientWidth, `${width}px horizontal overflow: ${JSON.stringify(metrics)}`);
+      assert.deepEqual(metrics.smallTargets, [], `${width}px small targets`);
+      assert.deepEqual(metrics.smallText, [], `${width}px small text`);
+      assert.deepEqual(metrics.unlabeled, [], `${width}px unlabeled fields`);
+      const layout = await command('Page.getLayoutMetrics');
+      const screenshot = await command('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true, clip: { x: 0, y: 0, width, height: Math.ceil(layout.cssContentSize.height), scale: 1 } });
+      await fs.writeFile(path.join(evidenceDir, `viewport-${width}.png`), Buffer.from(screenshot.data, 'base64'));
+      console.log(`PASS: ${width}px viewport, document ${metrics.documentWidth}px, targets >=44px, text >=16px, fields labeled`);
+    }
+    await command('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
+    const motion = await evaluate(`(() => { const style = getComputedStyle(document.querySelector('.card')); return { matches: matchMedia('(prefers-reduced-motion: reduce)').matches, animation: style.animationDuration, transition: getComputedStyle(document.querySelector('#submit')).transitionDuration }; })()`);
+    assert.equal(motion.matches, true);
+    assert.ok(parseFloat(motion.animation) <= 0.01 && parseFloat(motion.transition) <= 0.01, JSON.stringify(motion));
+    await command('Emulation.setEmulatedMedia', { features: [] });
+    await evaluate("document.activeElement.blur(); window.scrollTo(0, 0)");
+    await command('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9 });
+    await command('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9 });
+    const focused = await evaluate(`(() => { const el = document.activeElement; const style = getComputedStyle(el); return { text: el.textContent, top: el.getBoundingClientRect().top, outline: style.outlineStyle, background: style.backgroundColor }; })()`);
+    assert.match(focused.text, /跳转到查询表单/);
+    assert.ok(focused.top >= 0, JSON.stringify(focused));
+    const tabOrder = [];
+    for (let i = 0; i < 20 && tabOrder.at(-1)?.id !== 'output'; i++) {
+      await command('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9 });
+      await command('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9 });
+      const current = await evaluate(`(() => { const el = document.activeElement; const style = getComputedStyle(el.id === 'output' ? el.parentElement : el); return { id: el.id || (el.matches('.card a') ? 'repository-link' : ''), outline: style.outlineStyle, outlineWidth: style.outlineWidth }; })()`);
+      if (tabOrder.at(-1)?.id !== current.id) tabOrder.push(current);
+    }
+    assert.deepEqual(tabOrder.map(x => x.id), ['period', 'language', 'keyword', 'limit', 'sort', 'min-stars', 'date', 'submit', 'format', 'download', 'repository-link', 'output']);
+    assert.ok(tabOrder.every(x => x.outline !== 'none' && parseFloat(x.outlineWidth) >= 2), JSON.stringify(tabOrder));
+    console.log(`PASS: keyboard order and visible outlines ${JSON.stringify(tabOrder)}`);
+    assert.equal(await evaluate("document.querySelector('#min-stars').getAttribute('aria-describedby')"), 'min-stars-hint');
+    assert.equal(await evaluate("document.querySelector('#status').getAttribute('role')"), 'status');
+    console.log(`PASS: reduced motion ${JSON.stringify(motion)}; keyboard skip link visible ${JSON.stringify(focused)}; hint and status semantics`);
     const json = await evaluate("document.querySelector('#output').textContent"); assert.equal(JSON.parse(json)[0].stars, 123);
     const params = new URL('https://api.github.com' + calls[0]).searchParams; assert.match(params.get('q'), /stars:>=100/); assert.match(params.get('q'), /language:JavaScript/); assert.match(params.get('q'), /demo/); assert.match(params.get('q'), /2026-10-29/); assert.equal(params.get('sort'), 'updated'); assert.equal(params.get('per_page'), '2');
     assert.equal((await fs.readdir(downloads)).length, 0, 'query must not download');

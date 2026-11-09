@@ -7,36 +7,9 @@ const download = document.querySelector('#download');
 const submit = document.querySelector('#submit');
 const count = document.querySelector('#count');
 let result = null;
-function render() {
-  output.textContent = result ? result[format.value] : '等待查询结果';
-}
-form.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  result = null; cards.replaceChildren(); count.textContent = ''; download.disabled = true; render();
-  status.textContent = '正在查询 GitHub，请稍候…'; submit.disabled = true;
-  try {
-    const params = new URLSearchParams();
-    for (const [key, value] of new FormData(form)) if (value !== '') params.append(key, value);
-    const response = await fetch(`/api/query?${params}`);
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || '查询失败，请重试。');
-    result = data; count.textContent = `${data.items.length} 个项目`;
-    status.textContent = data.items.length ? '查询完成。' : '没有找到结果，请调整条件后重试。';
-    for (const item of data.items) {
-      const article = document.createElement('article'); article.className = 'card';
-      const title = document.createElement('h3');
-      try { const url = new URL(item.url); if (url.protocol === 'https:' || url.protocol === 'http:') { const link = document.createElement('a'); link.href = url.href; link.target = '_blank'; link.rel = 'noopener noreferrer'; link.textContent = item.fullName || item.name || '未命名仓库'; title.append(link); } else throw Error(); } catch (_) { title.textContent = item.fullName || item.name || '未命名仓库'; }
-      const desc = document.createElement('p'); desc.textContent = item.description || '暂无简介';
-      const meta = document.createElement('div'); meta.className = 'meta'; meta.textContent = `${item.language || '未知语言'}  ·  ★ ${item.stars}  ·  Fork ${item.forks}`;
-      article.append(title, desc, meta); cards.append(article);
-    }
-    download.disabled = false; render();
-  } catch (error) { status.textContent = `查询失败：${error.message} 请检查条件或网络后重试。`; }
-  finally { submit.disabled = false; }
-});
+function render() { output.textContent = result ? result[format.value] : '等待查询结果'; }
+function setStatus(message, state = 'ready') { status.textContent = message; status.className = `status status-${state}`; }
+function renderCards(items) { for (const item of items) { const article = document.createElement('article'); article.className = 'card'; const title = document.createElement('h3'); try { const url = new URL(item.url); if (url.protocol === 'https:' || url.protocol === 'http:') { const link = document.createElement('a'); link.href = url.href; link.target = '_blank'; link.rel = 'noopener noreferrer'; link.textContent = item.fullName || item.name || '未命名仓库'; title.append(link); } else throw Error(); } catch (_) { title.textContent = item.fullName || item.name || '未命名仓库'; } const desc = document.createElement('p'); desc.textContent = item.description || '暂无简介'; const meta = document.createElement('div'); meta.className = 'meta'; meta.textContent = `${item.language || '未知语言'}  ·  ★ ${item.stars}  ·  Fork ${item.forks}`; article.append(title, desc, meta); cards.append(article); } }
+form.addEventListener('submit', async (event) => { event.preventDefault(); result = null; cards.replaceChildren(); count.textContent = ''; download.disabled = true; render(); setStatus('正在查询 GitHub，请稍候…', 'loading'); submit.disabled = true; submit.querySelector('.button-label').textContent = '查询中…'; try { const params = new URLSearchParams(); for (const [key, value] of new FormData(form)) if (value !== '') params.append(key, value); const response = await fetch(`/api/query?${params}`); const data = await response.json(); if (!response.ok) throw new Error(data.error || '查询失败，请重试。'); result = data; count.textContent = `${data.items.length} 个项目`; renderCards(data.items); setStatus(data.items.length ? '查询完成，可以查看或下载结果。' : '没有找到结果，请调整筛选条件后重试。', data.items.length ? 'success' : 'empty'); download.disabled = false; render(); } catch (error) { setStatus(`查询失败：${error.message} 请检查条件或网络后重试。`, 'error'); } finally { submit.disabled = false; submit.querySelector('.button-label').textContent = '查询仓库'; } });
 format.addEventListener('change', render);
-download.addEventListener('click', () => {
-  if (!result) return;
-  const blob = new Blob([result[format.value]], { type: format.value === 'json' ? 'application/json;charset=utf-8' : 'text/plain;charset=utf-8' });
-  const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = `github-repositories.${format.value === 'json' ? 'json' : 'txt'}`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
-});
+download.addEventListener('click', () => { if (!result) return; const blob = new Blob([result[format.value]], { type: format.value === 'json' ? 'application/json;charset=utf-8' : 'text/plain;charset=utf-8' }); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = `github-repositories.${format.value === 'json' ? 'json' : 'txt'}`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); });
